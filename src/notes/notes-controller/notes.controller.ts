@@ -54,4 +54,9 @@ export class NotesController {
     await this.notesRepository.delete(body.id);
     return 'NOTE DELETED';
   }
+
+  @Get('ping')
+  getPing() {
+    return { message: 'pong' };
+  }
 }
