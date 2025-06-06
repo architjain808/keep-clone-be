@@ -38,7 +38,7 @@ export class NotesController {
     }
 
     await this.notesRepository.update(body.id, body);
-    return 'UPDTAED';
+    return { message: 'UPDTAED' };
   }
 
   @Post('delete')
@@ -52,7 +52,7 @@ export class NotesController {
     }
 
     await this.notesRepository.delete(body.id);
-    return 'NOTE DELETED';
+    return { message: 'NOTE DELETED' };
   }
 
   @Get('ping')
