@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NoteEntity } from '../notes.entity';
 import { CreateNoteDto } from '../notes.dto';
-import { randomUUID } from 'crypto';
+import { UUID, randomUUID } from 'crypto';
 
 @Controller('notes')
 export class NotesController {
@@ -39,5 +39,19 @@ export class NotesController {
 
     await this.notesRepository.update(body.id, body);
     return 'UPDTAED';
+  }
+
+  @Post('delete')
+  async deleteNote(@Body() body: { id: UUID }) {
+    if (!body.id) {
+      throw new NotFoundException('ID is required');
+    }
+    const note = await this.notesRepository.findOneBy({ id: body.id });
+    if (!note) {
+      throw new NotFoundException('Note not found');
+    }
+
+    await this.notesRepository.delete(body.id);
+    return 'NOTE DELETED';
   }
 }

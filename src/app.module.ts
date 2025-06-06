@@ -4,17 +4,27 @@ import { AppService } from './app.service';
 import { NotesModule } from './notes/notes.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NoteEntity } from './notes/notes.entity';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     NotesModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.CONNECTION_STRING,
-      entities: [NoteEntity], // Explicitly register the entity
-      autoLoadEntities: true, // Keep this as well
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get('CONNECTION_STRING'),
+        entities: [NoteEntity],
+        autoLoadEntities: true,
+        synchronize: configService.get('NODE_ENV') !== 'production',
+        ssl: {
+          rejectUnauthorized: false, // Helps with some cloud database providers
+        },
+        retryAttempts: 5,
+        retryDelay: 3000,
+      }),
     }),
   ],
   controllers: [AppController],
