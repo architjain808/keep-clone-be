@@ -4,12 +4,14 @@ import { Repository } from 'typeorm';
 import { NoteEntity } from '../notes.entity';
 import { CreateNoteDto } from '../notes.dto';
 import { UUID, randomUUID } from 'crypto';
+import { NotesGateway } from 'src/socket.gateway';
 
 @Controller('notes')
 export class NotesController {
   constructor(
     @InjectRepository(NoteEntity)
     private notesRepository: Repository<NoteEntity>,
+    private notesGateway: NotesGateway,
   ) {}
 
   @Get()
@@ -18,13 +20,16 @@ export class NotesController {
   }
 
   @Post('save')
-  SaveNewNote(@Body() body: CreateNoteDto) {
+  async SaveNewNote(@Body() body: CreateNoteDto) {
     const note: Partial<NoteEntity> = {
       ...body,
       createdAt: new Date().toISOString(),
       id: randomUUID(),
     };
-    return this.notesRepository.save(note);
+   const savedNote = await this.notesRepository.save(note);
+    const updatedNotes = await this.getAllNotes();
+    this.notesGateway.sendNotesUpdate(updatedNotes);
+    return savedNote;
   }
 
   @Post('update')
@@ -38,6 +43,9 @@ export class NotesController {
     }
 
     await this.notesRepository.update(body.id, body);
+    const updatedNotes = await this.getAllNotes();
+    this.notesGateway.sendNotesUpdate(updatedNotes);
+    // return note
     return { message: 'UPDTAED' };
   }
 
@@ -52,6 +60,8 @@ export class NotesController {
     }
 
     await this.notesRepository.delete(body.id);
+    const updatedNotes = await this.getAllNotes();
+    this.notesGateway.sendNotesUpdate(updatedNotes);
     return { message: 'NOTE DELETED' };
   }
 
